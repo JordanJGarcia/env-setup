@@ -2,5 +2,6 @@
 
 cp -R ./tools ~
 cp ./.bash_profile ~
+cp ./.bash_profile ~/.bashrc
 cp ./.vimrc ~
 . ~/.bash_profile && echo "Setup complete..."
