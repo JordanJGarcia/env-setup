@@ -1,0 +1,34 @@
+#! /bin/bash
+
+desc="This script replaces the remote host's .ssh/authorized_keys file with this box's public key to all the specified servers"
+
+# bring in common funcs
+. /home/$USER/tools/common-functions
+
+# set colored output to terminal
+turn_colors on
+
+usagemsg()
+{
+    echo -e "Description: ${yellow}$desc${default}"
+    echo -e " "
+    echo -e "${red}Usage:${default}    rk" 1>&2
+    echo -e "           ${purple} - input will be requested for server(s) - ${default}" 1>&2
+    echo -e " " 1>&2
+}
+
+# usage check
+if [[ $# -gt 0 ]]; then
+    usagemsg
+    exit 1
+fi
+
+
+# set server list
+set_servers
+
+# copy local public key over
+for server in "${servers[@]}"; do
+    ssh ${REMUSER}@${server} "if [ ! -d /home/${REMUSER}/.ssh ]; then mkdir /home/${REMUSER}/.ssh; fi; exit"
+    scp -r /home/jordan/.ssh/id_rsa.pub ${REMUSER}@${server}:/home/${REMUSER}/.ssh/authorized_keys
+done

@@ -1,0 +1,43 @@
+#! /bin/bash
+
+declare -a servers=()
+
+# set colored output to stdout (only works to terminal, not files)
+turn_colors()
+{
+    if [[ "$1" == "on" ]]; then
+        blue="\033[0;36m"
+        purple="\033[3;35m"
+        green="\033[3;32m"
+        red="\033[3;91m"
+        yellow="\033[3;33m"
+        default="\033[0m"
+    else
+        blue=""
+        purple=""
+        green=""
+        red=""
+        yellow=""
+        default=""
+
+        if [[ "$1" != "off" ]]; then
+            echo "Error: turn_colors() - invalid option - defaulted to 'off' (valid options are 'on' or 'off')"
+        fi
+    fi
+    return
+}
+
+# default colors to off
+turn_colors off
+
+# used to process server arguments on several of my 
+# scripts in ~/tools
+set_servers()
+{
+    # empty array
+    servers=()
+
+    # request server(s) from user
+    echo -e "${green}Enter user@server(s) ${blue}(each one separated by a space): ${default}"
+    read -a servers
+}

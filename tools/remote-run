@@ -1,0 +1,119 @@
+#! /bin/bash
+
+#set -e
+
+# for common functions... duh
+. /home/$USER/tools/common-functions
+
+desc="This script runs a local script on the specified remote machine(s)"
+
+usagemsg()
+{
+    turn_colors on
+
+    echo -e "Description: ${yellow}$desc${default}" 1>&2
+    echo -e " " 1>&2 
+    echo -e "${red}Usage:${default}    rr script/command [dest/on/remote] [--color|-c]" 1>&2
+    echo -e "           ${purple} - input will be requested for server(s) - ${default}" 1>&2
+    echo -e " " 1>&2
+    echo -e "          script/command ${blue}(can be either, commands should be quoted)${default}" 1>&2
+    echo -e "          [dest/on/remote] ${blue}(optional - must be a directory - default is /home/USER/remote-script-dump/)${default}" 1>&2
+    echo -e "          [--color|-c] ${blue}(optional - adds color when echoing to terminal)${default}" 1>&2
+    echo -e " " 1>&2
+    
+    turn_colors off
+}
+
+
+# usage check
+if [[ $# -lt 1 || $# -gt 3 ]]; then
+    usagemsg
+    exit 1
+fi
+
+# set up colored output, turn_colors is in ~/tools/common-functions
+if [[ $# -gt 1 && "$2" == "--color" || "$2" == "-c" || "$3" == "--color" || "$3" == "-c" ]]; then
+    turn_colors on
+else
+    turn_colors off
+fi
+
+# set up dir
+if [[ $# -gt 1 && ! ${2} = "--color" && ! ${2} = "-c" ]]; then
+    dir="${2}"
+else
+    dir="~/remote-script-dump"
+fi
+
+# grab first part of script/command to determine if its a file later
+# the idea here is if the number of fields (NF) - separated by spaces
+# is greater than 1, then if it is a script, it may contain arguments supplied to it
+# and we only want to test the script name later
+if [[ $(echo -e "$1" | awk -F' ' '{print NF}') -gt 1 ]]; then
+    script="$(echo -e "$1" | awk -F' ' '{print $1}')"
+else
+    script="$1"
+fi
+
+# usage: copy_script_to_remote server script
+# $1 = server
+# $2 = script
+copy_script_to_remote()
+{
+    if [[ $# -ne 2 ]]; then
+        echo -e "${red}Error: ${yellow}copy_script_to_remote${red} ${default}server script" 1>&2
+    else
+        ssh "${REMUSER}@${1}" "if [[ ! -d ${dir} ]]; then mkdir ${dir}; fi;"
+        scp -r "$2" "${REMUSER}@${1}:${dir}"
+    fi
+}
+
+# usage: run_on_remote server script/command
+# $1 = user@server
+# $2 = script/command
+run_on_remote()
+{
+    if [[ $# -ne 2 ]]; then
+        echo -e "${red}Error: ${yellow}run_on_remote${red} ${default}server script/command" 1>&2
+    else
+        echo -e " "
+        echo -e "(${blue}${2}${default}): "
+        echo -e " "
+
+        if [[ -f $script ]]; then
+            ssh "${1}" "${dir}/${2}"
+        else
+            ssh "${1}" "${2}"
+        fi
+
+        echo -e " "
+        echo -e "${purple}********************************************************************************${default}"
+    fi
+}
+
+# assign servers
+set_servers
+
+echo -e " "
+echo -e "Running (${blue}${1}${default}) on the following servers:${green} ${servers[@]}${default}"
+echo -e " "
+
+for server in "${servers[@]}"; do
+    echo -e "${purple}********************************************************************************${default}"
+    echo -e " "
+    echo -e "${green}                               $server: ${default}"
+    echo -e " "
+    echo -e "${purple}********************************************************************************${default}"
+    echo -e " "
+
+    if [[ -f $script ]]; then
+        echo -e "${yellow}Script supplied, copying into '${dir}' on ${server}...${default}"
+        copy_script_to_remote "$server" "$script"
+    else
+        echo -e "${yellow}Command supplied, running...${default}"
+        echo -e " "
+    fi
+
+    run_on_remote "$server" "$1"
+    echo -e " "
+done

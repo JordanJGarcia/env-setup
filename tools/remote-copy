@@ -1,0 +1,38 @@
+#! /bin/bash
+
+set -e
+
+# bring in common funcs
+. /home/$USER/tools/common-functions
+
+# set colored output to terminal
+turn_colors on
+
+desc="This script copies a local file onto the specifed remote servers at the specified locations"
+
+usagemsg()
+{
+    echo -e "Description: ${yellow}$desc${default}" 1>&2
+    echo -e " " 1>&2 
+    echo -e "${red}Usage:${default}    rcp file dest/on/remote" 1>&2
+    echo -e "           ${purple} - input will be requested for server(s) - ${default}" 1>&2
+    echo -e " " 1>&2
+    echo -e "          file ${blue}(that you want to copy to remote machine)${default}" 1>&2
+    echo -e "          dest/on/remote ${blue}(file or dir to copy to on remote)${default}" 1>&2
+    echo -e " " 1>&2
+}
+
+# usage check
+if [ $# -ne 2 ]; then
+    usagemsg
+    exit 1
+fi
+
+# set server list
+set_servers
+
+# copy files to servers
+for server in "${servers[@]}"; do
+    ssh "${server}" "if [[ ! -d ${2} && ${2} =~ .*/$ ]]; then mkdir ${2}; fi; exit"
+    scp -r "$2" "${server}:${2}"
+done

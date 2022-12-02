@@ -1,0 +1,6 @@
+#! /bin/bash
+
+cp -R ./tools ~
+cp ./.bash_profile ~
+cp ./.vimrc ~
+. ~/.bash_profile && echo "Setup complete..."
